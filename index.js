@@ -1,19 +1,20 @@
-import dotenv from 'dotenv';
-import OpenAI from 'openai';
-import { verifyApiKey } from './verify-api-key.js';
+import { getSampleData } from './data.js';
+import { run } from './evaluation.js';
+import { pivotScores, summarizeScores } from './scores.js';
+import { showMisses } from './show-misses.js';
 
-dotenv.config({ override: true, quiet: true });
+const { claims, labels } = getSampleData();
 
-const openrouterApiKey = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+try {
+  const luna_low = await run('openai/gpt-6-luna', 'low', claims, labels);
+  const luna_medium = await run('openai/gpt-6-luna', 'medium', claims, labels);
+  const gemini = await run('google/gemini-3.5-flash-lite', 'low', claims, labels);
 
-if (!verifyApiKey(openrouterApiKey)) {
-  process.exit(1);
+  const scored = [...luna_low, ...luna_medium, ...gemini];
+  console.table(pivotScores(scored));
+  console.table(summarizeScores(scored));
+  showMisses(luna_low, labels);
+} catch (error) {
+  console.error(`Error: ${error.message}`);
+  process.exitCode = 1;
 }
-
-export const openrouter = new OpenAI({
-  baseURL: OPENROUTER_BASE_URL,
-  apiKey: openrouterApiKey,
-  timeout: 120_000,
-  maxRetries: 5,
-});
