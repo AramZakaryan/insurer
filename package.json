@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node main.js",
-    "chart": "node scripts/plot-claims.js"
+    "chart": "node scripts/plot-claims.js",
+    "table": "node scripts/show-table.js"
   },
   "dependencies": {
     "dotenv": "^18.0.10",
