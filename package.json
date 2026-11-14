@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node main.js"
+    "start": "node main.js",
+    "chart": "node scripts/plot-claims.js"
   },
   "dependencies": {
     "dotenv": "^18.0.10",

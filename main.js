@@ -2,7 +2,6 @@ import { openrouter } from './index.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, getSampleData, load } from './data.js';
-import { plotClaimsByType } from './charts.js';
 
 const TINY = false;
 
@@ -43,13 +42,6 @@ ${hangover.story}
 
 **Handler:** ${hangoverDecision.decision} $${hangoverPayout}. ${hangoverDecision.reason}
 `);
-
-const data = claims.map((claim) => ({
-  claim_type: claim.claim_type,
-  decision: labels[claim.claim_id].decision,
-}));
-const chartPath = plotClaimsByType(data);
-console.log(`Claims by type chart: ${chartPath}`);
 
 
 // const messages = [
