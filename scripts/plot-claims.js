@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { getSampleData } from '../data.js';
-import { plotClaimsByType } from '../charts.js';
+import { plotClaimsByType, plotClaimsByDifficulty } from '../charts.js';
 
 const TINY = false;
 
@@ -9,11 +9,14 @@ try {
   const data = claims.map((claim) => ({
     claim_type: claim.claim_type,
     decision: labels[claim.claim_id].decision,
+    difficulty: labels[claim.claim_id].difficulty,
   }));
 
-  const chartPath = plotClaimsByType(data);
-  console.log(`Claims by type chart: ${chartPath}`);
-  execFileSync('open', [chartPath]);
+  const chartPaths = [plotClaimsByType(data), plotClaimsByDifficulty(data)];
+  for (const chartPath of chartPaths) {
+    console.log(`Chart: ${chartPath}`);
+  }
+  execFileSync('open', chartPaths);
 } catch (error) {
   console.error(`Could not display chart: ${error.message}`);
   process.exitCode = 1;
