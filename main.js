@@ -2,8 +2,9 @@ import { openrouter } from './index.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, getSampleData, load } from './data.js';
+import { plotClaimsByType } from './charts.js';
 
-const TINY = true;
+const TINY = false;
 
 const { claims, labels } = getSampleData({ tiny: TINY });
 const policies = Object.fromEntries(
@@ -11,8 +12,44 @@ const policies = Object.fromEntries(
 );
 const policyWording = readFileSync(join(DATA, 'policy_wording.md'), 'utf8');
 
-console.log(`${claims.length} claims, ${Object.keys(labels).length} labels, ${Object.keys(policies).length} policies`);
-console.log(`The policy wording is ${policyWording.trim().split(/\s+/u).length.toLocaleString('en-US')} words`);
+// console.log(`${claims.length} claims, ${Object.keys(labels).length} labels, ${Object.keys(policies).length} policies`);
+// console.log(`The policy wording is ${policyWording.trim().split(/\s+/u).length.toLocaleString('en-US')} words`);
+
+const homeAlone = claims.find((claim) => claim.claim_id === 'CLM-1015');
+const decision = labels['CLM-1015'];
+const payout = decision.payout.toLocaleString('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+console.log(`**${homeAlone.summary}**
+
+${homeAlone.story}
+
+**Handler:** ${decision.decision} $${payout}. ${decision.reason}
+`);
+
+const { claims: queue, labels: queueLabels } = getSampleData();
+const hangover = queue.find((claim) => claim.claim_id === 'CLM-1010');
+const hangoverDecision = queueLabels['CLM-1010'];
+const hangoverPayout = hangoverDecision.payout.toLocaleString('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+console.log(`**${hangover.summary}**
+
+${hangover.story}
+
+**Handler:** ${hangoverDecision.decision} $${hangoverPayout}. ${hangoverDecision.reason}
+`);
+
+const data = claims.map((claim) => ({
+  claim_type: claim.claim_type,
+  decision: labels[claim.claim_id].decision,
+}));
+const chartPath = plotClaimsByType(data);
+console.log(`Claims by type chart: ${chartPath}`);
 
 
 // const messages = [
