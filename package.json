@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node prompt.js"
+    "start": "node main.js"
   },
   "dependencies": {
     "dotenv": "^18.0.10",
