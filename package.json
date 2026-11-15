@@ -7,9 +7,12 @@
     "start": "node index.js",
     "chart": "node scripts/plot-claims.js",
     "table": "node scripts/show-table.js",
-    "test": "node --test"
+    "test": "node --test",
+    "langchain": "node index.js"
   },
   "dependencies": {
+    "@langchain/core": "^1.4.1",
+    "@langchain/openai": "^1.8.4",
     "@openrouter/sdk": "^1.5.103",
     "dotenv": "^18.0.10",
     "openai": "^7.57.0",

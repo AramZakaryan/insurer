@@ -46,3 +46,7 @@ console.log(first);
 Results contain `claim_id`, `decision`, `confidence`, `right`, `cost`, and `seconds`. Correctness compares only the decision, since Jev does not generate a payout or rationale. Pass the matching labels when using tiny or held-out data. Reference labels are never sent to Jev. Importing the function does not send a request; the example makes one paid request when executed.
 
 Model: `typesafe/jev-1.13`, as used in the course. See [OpenRouter's Jev documentation](https://openrouter.ai/docs/guides/community/jev).
+
+## LangChain chat example
+
+Run `npm start` (or `npm run langchain`) for the LangChain chat example. `langchain-chat.js` configures and exports `llm`. `index.js` contains the `messages`, calls `llm.invoke(messages)`, and prints `response.content`. Edit the `messages` array in `index.js` to change the prompts. The earlier evaluation examples are currently commented out. It uses the existing `OPENROUTER_API_KEY` and `openrouter/free` model router; free-model availability and request limits apply. Node.js 22 or newer is required by the LangChain integration.

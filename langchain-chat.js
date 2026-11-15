@@ -1,0 +1,19 @@
+import dotenv from 'dotenv';
+import { ChatOpenAI } from '@langchain/openai';
+import { verifyApiKey } from './verify-api-key.js';
+
+dotenv.config({ override: true, quiet: true });
+
+const openrouterApiKey = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+if (!verifyApiKey(openrouterApiKey)) {
+  throw new Error('OpenRouter API key is required.');
+}
+
+export const llm = new ChatOpenAI({
+  model: 'openrouter/free',
+  apiKey: openrouterApiKey,
+  configuration: { baseURL: OPENROUTER_BASE_URL },
+  timeout: 120_000,
+});
