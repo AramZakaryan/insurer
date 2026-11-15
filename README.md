@@ -68,4 +68,4 @@ await recordDecision.invoke({
 console.log(recorded['CLM-1001']);
 ```
 
-Use a policy ID from `data/policies.json`. Recording the same claim again overwrites its entry. Records disappear when the process exits. The Zod schema validates argument types and decision options; the payout and rationale rules in the descriptions guide the model but are not additional business-rule checks. The agent in `agent.js` uses both tools.
+Use a policy ID from `data/policies.json`. Recording the same claim again overwrites its entry. `index.js` saves the full `recorded` object as formatted UTF-8 JSON in `recorded.json` after a successful agent run. The file is ignored by Git and is overwritten by the next successful run; it can be opened after Node.js exits. The Zod schema validates argument types and decision options; the payout and rationale rules in the descriptions guide the model but are not additional business-rule checks. The agent in `agent.js` uses both tools.
