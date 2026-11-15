@@ -1,20 +1,24 @@
-import { llm } from './langchain-chat.js';
+import { agent } from './agent.js';
 import { getSampleData } from './data.js';
-import { run } from './evaluation.js';
-import { pivotScores, summarizeScores, summarizeConfidence } from './scores.js';
-import { showMisses } from './show-misses.js';
-import { decideWithJev } from './jev.js';
+import { makeClaimPrompt } from './prompt.js';
 
-const { claims, labels } = getSampleData();
+const { claims } = getSampleData();
 
 try {
-  const messages = [
-    { role: 'system', content: 'You are a helpful assistant who answers in the style of a pirate.' },
-    { role: 'user', content: 'What is the meaning of the universe?' },
-  ];
+  const result = await agent.invoke({
+    messages: [{ role: 'user', content: makeClaimPrompt(claims[0]) }],
+  });
 
-  const response = await llm.invoke(messages);
-  console.log(response.content);
+  for (const message of result.messages.slice(1)) {
+    console.log(`\n=== ${message.getType()} ===`);
+    console.log(message.content);
+    if (message.tool_calls?.length) {
+      console.dir(message.tool_calls, { depth: null });
+    }
+    if (message.tool_call_id) {
+      console.log(`tool_call_id: ${message.tool_call_id}`);
+    }
+  }
 } catch (error) {
   console.error(`Error: ${error.message}`);
   process.exitCode = 1;

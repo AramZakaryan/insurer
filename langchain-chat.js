@@ -17,3 +17,12 @@ export const llm = new ChatOpenAI({
   configuration: { baseURL: OPENROUTER_BASE_URL },
   timeout: 120_000,
 });
+
+export const luna = new ChatOpenAI({
+  model: 'openai/gpt-6-luna',
+  apiKey: openrouterApiKey,
+  configuration: { baseURL: OPENROUTER_BASE_URL },
+  reasoningEffort: 'low',
+  timeout: 120_000,
+  maxRetries: 5,
+});

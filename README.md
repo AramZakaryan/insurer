@@ -49,4 +49,23 @@ Model: `typesafe/jev-1.13`, as used in the course. See [OpenRouter's Jev documen
 
 ## LangChain chat example
 
-Run `npm start` (or `npm run langchain`) for the LangChain chat example. `langchain-chat.js` configures and exports `llm`. `index.js` contains the `messages`, calls `llm.invoke(messages)`, and prints `response.content`. Edit the `messages` array in `index.js` to change the prompts. The earlier evaluation examples are currently commented out. It uses the existing `OPENROUTER_API_KEY` and `openrouter/free` model router; free-model availability and request limits apply. Node.js 22 or newer is required by the LangChain integration.
+Run `npm start` (or `npm run langchain`) to run the claims agent on the first claim and print its message history, excluding the initial user message. `langchain-chat.js` configures and exports `llm`. `agent.js` creates the agent with Luna at low effort, the two claims tools, and `AGENT_SYSTEM_PROMPT`. `index.js` calls `agent.invoke` with `makeClaimPrompt(claims[0])` and prints model messages, tool calls, tool results, and the final answer. It uses the existing `OPENROUTER_API_KEY` and `openrouter/free` model router; free-model availability and request limits apply. Node.js 22 or newer is required by the LangChain integration.
+
+## Claims tools
+
+`tools.js` exports LangChain tools `getPolicy` (`get_policy`) and `recordDecision` (`record_decision`), a `tools` array for an agent, and the in-memory `recorded` object.
+
+```js
+import { getPolicy, recordDecision, recorded } from './tools.js';
+
+console.log(await getPolicy.invoke({ policy_id: 'POL-001' }));
+await recordDecision.invoke({
+  claim_id: 'CLM-1001',
+  decision: 'approve',
+  payout: 420,
+  rationale: 'The claim is covered under section 3.',
+});
+console.log(recorded['CLM-1001']);
+```
+
+Use a policy ID from `data/policies.json`. Recording the same claim again overwrites its entry. Records disappear when the process exits. The Zod schema validates argument types and decision options; the payout and rationale rules in the descriptions guide the model but are not additional business-rule checks. The agent in `agent.js` uses both tools.

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getSampleData } from '../data.js';
 import { decideWithJev, JEV, JEV_QUESTION } from '../jev.js';
-import { policies, policyWording } from '../prompts.js';
+import { policies, policyWording } from '../policies.js';
 import { requestDecisions } from '../openrouter-decisions.js';
 
 const { claims, labels } = getSampleData();

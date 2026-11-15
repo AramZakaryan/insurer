@@ -1,4 +1,4 @@
-import { decide } from './decide.js';
+import { decide } from './decisions.js';
 
 export function isRight(answer, label) {
   return answer.decision === label.decision && Math.abs(answer.payout - label.payout) <= 1;

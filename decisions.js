@@ -1,7 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import { openrouter } from './openrouter.js';
 import { requestDecision } from './request-decision.js';
-import { makeMessages } from './prompts.js';
+import { makeMessages } from './prompt.js';
 
 export async function decide(claim, model, effort) {
   const start = performance.now();

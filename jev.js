@@ -1,7 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import { getSampleData } from './data.js';
 import { requestDecisions } from './openrouter-decisions.js';
-import { policies, policyWording } from './prompts.js';
+import { policies, policyWording } from './policies.js';
 
 export const JEV = 'typesafe/jev-1.13';
 export const JEV_QUESTION = {
