@@ -42,3 +42,16 @@ export function summarizeScores(scored) {
 
   return [...groups.values()];
 }
+
+export function summarizeConfidence(results) {
+  const groups = new Map();
+  for (const result of results) {
+    if (!groups.has(result.confident)) {
+      groups.set(result.confident, { confident: result.confident, sum: 0, count: 0 });
+    }
+    const group = groups.get(result.confident);
+    group.sum += Number(result.right);
+    group.count += 1;
+  }
+  return [...groups.values()].sort((a, b) => Number(a.confident) - Number(b.confident));
+}
