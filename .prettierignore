@@ -1,0 +1,15 @@
+node_modules/
+outputs/
+dist/
+coverage/
+.husky/_/
+.env
+.env.*
+recorded.json
+package-lock.json
+
+# Business records retain their source formatting.
+data/
+
+playwright-report/
+test-results/

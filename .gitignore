@@ -6,3 +6,8 @@ node_modules/
 .DS_Store
 outputs/
 /recorded.json
+
+dist/
+playwright-report/
+test-results/
+coverage/

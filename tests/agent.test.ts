@@ -1,72 +1,182 @@
-import { execFile } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { rmSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import test from 'node:test';
-import { promisify } from 'node:util';
+import { createApp } from '../backend/app.ts';
+import { Store } from '../backend/store.ts';
+import { createRunner } from '../agent/run.ts';
+import { createFixtures } from './fixtures.ts';
+import { StubModel } from './stub-model.ts';
 
-const runNode = promisify(execFile);
-
-test('agent retrieves a policy, records a decision and finishes with low reasoning', async () => {
-  const workspace = mkdtempSync(join(tmpdir(), 'insurer-agent-'));
-  // Isolate dotenv from the real key and intercept every model request.
-  const script = `
-    import assert from 'node:assert/strict';
-    const replies = [
-      { content: null, tool_calls: [{ id: 'policy', type: 'function', function: {
-        name: 'get_policy', arguments: JSON.stringify({ policy_id: 'POL-2001' })
-      } }] },
-      { content: null, tool_calls: [{ id: 'record', type: 'function', function: {
-        name: 'record_decision', arguments: JSON.stringify({
-          claim_id: 'TEST-1', decision: 'approve', payout: 420, rationale: 'Covered by section 3.'
-        })
-      } }] },
-      { content: 'Approved $420.' },
-    ];
-    let calls = 0;
-    globalThis.fetch = async (url, options) => {
-      assert.equal(String(url), 'https://openrouter.ai/api/v1/chat/completions');
-      const body = JSON.parse(options.body);
+test('real LangChain adapter sends low effort, scoped tools and captures OpenRouter usage without network model calls', async (t) => {
+  const seed = createFixtures();
+  const store = new Store(':memory:', seed.dir);
+  const server = createApp(store, async () => {}, '/missing-frontend').listen(
+    0,
+    '127.0.0.1',
+  );
+  await once(server, 'listening');
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+    store.close();
+    rmSync(seed.dir, { recursive: true, force: true });
+  });
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  const original = globalThis.fetch;
+  const actions = [
+    ['get_claim', {}],
+    ['get_policy', {}],
+    ['get_claim_history', {}],
+    [
+      'record_decision',
+      {
+        decision: 'approve',
+        payout: 420,
+        rationale:
+          'Section 3 covers the documented delay. The amount is within the limit.',
+      },
+    ],
+    ['pay_claim', { amount: 420, revision: 1 }],
+  ] as const;
+  let calls = 0;
+  t.mock.method(
+    globalThis,
+    'fetch',
+    async (
+      input: Parameters<typeof fetch>[0],
+      init: Parameters<typeof fetch>[1],
+    ) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      if (!url.startsWith('https://openrouter.ai/'))
+        return original(input, init);
+      const body = JSON.parse(String(init?.body)) as {
+        model: string;
+        reasoning_effort: string;
+        max_tokens: number;
+        messages: {
+          role: string;
+          content: string | { type: string; text: string }[];
+        }[];
+      };
       assert.equal(body.model, 'openai/gpt-6-luna');
       assert.equal(body.reasoning_effort, 'low');
-      if (calls === 1) {
-        const tool = body.messages.find(message => message.role === 'tool');
-        assert.equal(JSON.parse(tool.content).policy_id, 'POL-2001');
-      }
-      if (calls === 2) {
-        assert.ok(body.messages.some(message => message.content === 'Recorded approve on TEST-1'));
-      }
-      const message = replies[calls++];
-      assert.ok(message, 'Unexpected extra model request');
-      return new Response(JSON.stringify({
-        id: 'mock-' + calls, object: 'chat.completion', created: 1, model: body.model,
-        choices: [{ index: 0, message: { role: 'assistant', ...message },
-          finish_reason: message.tool_calls ? 'tool_calls' : 'stop' }],
-        usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 }
-      }), { headers: { 'content-type': 'application/json' } });
-    };
-    const { agent } = await import(${JSON.stringify(new URL('../agent.ts', import.meta.url).href)});
-    const { recorded } = await import(${JSON.stringify(new URL('../tools.ts', import.meta.url).href)});
-    const { makeClaimPrompt } = await import(${JSON.stringify(new URL('../prompt.ts', import.meta.url).href)});
-    const result = await agent.invoke({ messages: [{ role: 'user', content: makeClaimPrompt({
-      claim_id: 'TEST-1', policy_id: 'POL-2001', summary: 'Delayed flight',
-      story: 'Flight delayed.', claim_type: 'trip_delay', amount_claimed: 420
-    }) }] });
-    assert.equal(calls, 3);
-    assert.equal(result.messages.length, 6);
-    assert.equal(result.messages.at(-1).content, 'Approved $420.');
-    assert.deepEqual(recorded['TEST-1'], {
-      decision: 'approve', payout: 420, rationale: 'Covered by section 3.'
-    });
-  `;
+      assert.equal(body.max_tokens, 4096);
+      assert.equal(
+        Array.isArray(body.messages[0].content)
+          ? body.messages[0].content.map((part) => part.text).join('')
+          : body.messages[0].content,
+        `${store.instructions().instructions}\n\n${store.wording}`,
+      );
+      const action = actions[calls++];
+      return Response.json({
+        id: `mock-${calls}`,
+        object: 'chat.completion',
+        created: 1,
+        model: body.model,
+        choices: [
+          {
+            index: 0,
+            finish_reason: action ? 'tool_calls' : 'stop',
+            message: action
+              ? {
+                  role: 'assistant',
+                  content: null,
+                  tool_calls: [
+                    {
+                      id: `call-${calls}`,
+                      type: 'function',
+                      function: {
+                        name: action[0],
+                        arguments: JSON.stringify(action[1]),
+                      },
+                    },
+                  ],
+                }
+              : {
+                  role: 'assistant',
+                  content: 'The approved payout was simulated.',
+                },
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 10,
+          total_tokens: 20,
+          cost: 0.01,
+        },
+      });
+    },
+  );
+  const run = createRunner({
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    modelName: 'openai/gpt-6-luna',
+    apiKey: 'test-only',
+    timeoutMs: 5000,
+  });
+  await run('TEST-001', randomUUID());
+  assert.equal(calls, 6);
+  assert.equal(store.detail('TEST-001').paid, 420);
+  const usage = store.detail('TEST-001').run?.usage;
+  assert.ok(usage);
+  assert.ok(usage.cost !== null && Math.abs(usage.cost - 0.06) < 0.000001);
+  assert.equal(usage.input_tokens, 60);
+});
 
-  try {
-    await runNode(process.execPath, ['--import', import.meta.resolve('tsx'), '--input-type=module', '-e', script], {
-      cwd: workspace,
-      env: { ...process.env, OPENROUTER_API_KEY: 'test-key' },
-      timeout: 20_000,
-    });
-  } finally {
-    rmSync(workspace, { recursive: true, force: true });
-  }
+test('agent gets facts through HTTP, records decisions, logs steps and cannot bypass payment approval', async (t) => {
+  const seed = createFixtures();
+  const store = new Store(':memory:', seed.dir);
+  const server = createApp(store, async () => {}, '/missing-frontend').listen(
+    0,
+    '127.0.0.1',
+  );
+  await once(server, 'listening');
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+    store.close();
+    rmSync(seed.dir, { recursive: true, force: true });
+  });
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  const run = createRunner({
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    modelName: 'test-stub',
+    apiKey: 'not-a-real-key',
+    createModel: () => new StubModel(),
+  });
+  const thread = randomUUID();
+  await run('TEST-001', thread);
+  await run('TEST-001', thread);
+  assert.equal(store.detail('TEST-001').paid, 420);
+  assert.equal(store.detail('TEST-001').status, 'decided');
+  assert.equal(
+    store.eventList('TEST-001').filter((event) => event.kind === 'started')
+      .length,
+    1,
+  );
+  assert.ok(
+    store.eventList('TEST-001').some((event) => event.kind === 'tool_call'),
+  );
+  assert.ok(
+    store.eventList('TEST-001').some((event) => event.kind === 'tool_result'),
+  );
+  assert.equal(store.detail('TEST-001').run?.usage?.cost, 0);
+  await run('TEST-002', randomUUID());
+  assert.equal(store.detail('TEST-002').status, 'waiting_for_sign_off');
+  assert.equal(store.detail('TEST-002').paid, null);
+  assert.match(
+    JSON.stringify(store.eventList('TEST-002')),
+    /sign-off is required/,
+  );
+  await assert.rejects(run('TEST-005', randomUUID()), /Stub model failed/);
+  assert.equal(store.detail('TEST-005').status, 'waiting');
+  assert.equal(store.detail('TEST-005').run?.status, 'failed');
 });

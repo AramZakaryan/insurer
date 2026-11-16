@@ -1,84 +1,74 @@
-# insurer
+# Insurer
 
-TypeScript ES modules project for evaluating travel insurance claim decisions through OpenRouter using its OpenAI-compatible API.
+A travel claims pilot with an Express/SQLite backend, a LangChain agent on OpenRouter, and a React interface. Payments are simulated; approvals over $1,000 require a handler's sign-off enforced by the backend.
 
-## Setup
+## Start
+
+Use Node 26 (`nvm use` when available).
 
 ```sh
+nvm install
+nvm use
 npm install
-cp .env.example .env
 ```
 
-Add your OpenRouter API key to `OPENROUTER_API_KEY` in `.env`. The file is ignored by Git. Existing `.env` files do not need to be replaced.
-
-## Run
-
-TypeScript runs directly through `tsx`; a separate build is not needed.
+Copy `.env.example` to `.env` and set `OPENROUTER_API_KEY`. Set `MODEL_NAME` to override the default Luna model at low effort. Keep the key on the backend. Agent runs make paid model requests; opening the interface does not.
 
 ```sh
+npm run dev
+```
+
+Open http://127.0.0.1:5173. The backend listens on port 3001. For a single server serving the built interface:
+
+```sh
+npm run build
 npm start
 ```
 
-This runs the LangChain claims agent on the first sample claim using `openai/gpt-6-luna` at low effort through OpenRouter. The agent can retrieve the customer's policy and record its decision through tools. The application prints the message history and recorded decisions and saves a snapshot to the ignored `recorded.json` file. A run can make multiple paid model requests.
-
-Direct LLM and Jev evaluation helpers remain available in their modules; they are not the default `npm start` workflow. See [SPEC.md](docs/SPEC.md) for scoring rules and current limitations.
-
-```sh
-npm run chart
-npm run table
-```
-
-These commands display the local claims data in a browser without calling the API. Generated files are written to the ignored `outputs/` directory.
+Open http://127.0.0.1:3001. SQLite lives in the ignored `outputs/insurer.sqlite`; decisions, payment simulations and activity survive a restart. An interrupted run is marked failed, and claims without a recorded decision can be retried. Thread IDs identify runs; automatic resumption of interrupted model execution is not implemented.
 
 ## Checks
 
+Install the test browser once:
+
 ```sh
-npm run typecheck
-npm test
+npm run browsers
+npm run check
 ```
 
-Type checking uses strict mode. Tests use mocked responses and do not make paid model requests.
+The combined check runs Prettier, ESLint, strict type checking, unit/integration tests, the frontend build and Playwright. Tests use a stub model, synthetic records and a temporary database; they never call OpenRouter. Individual commands: `npm run lint`, `npm run format`, `npm run typecheck`, `npm test`, and `npm run e2e` (after building).
 
-## Jev decisions
+Husky installs the pre-commit hook during `npm install`. It formats/lints staged files, then checks types, runs tests, builds the frontend and runs Playwright. A failing step blocks the commit.
 
-`jev.ts` exports `JEV`, `JEV_QUESTION`, and `decideWithJev`. It uses the official `@openrouter/sdk` and the same `OPENROUTER_API_KEY`, with a 60-second timeout. Jev calls the separate Decisions endpoint, not Chat Completions.
+## Setup
 
-```ts
-import { getSampleData } from './data.ts';
-import { decideWithJev } from './jev.ts';
+Use Node 26 (`nvm install` and `nvm use` read `.nvmrc`). Install dependencies with `npm install`, copy `.env.example` to `.env` if it does not exist, and set `OPENROUTER_API_KEY`. Install the test browser once with `npm run browsers`.
 
-const { claims, labels } = getSampleData();
-const first = await decideWithJev(claims[0], labels);
-console.log(first);
+Run `npm run dev` and open `http://127.0.0.1:5173`. For the built app, run `npm run build` followed by `npm start`, then open `http://127.0.0.1:3001`.
+
+SQLite is stored in ignored `outputs/insurer.sqlite`. Restarting retains decisions and payments. Tests and evaluations use separate temporary databases.
+
+## Evaluation
+
+These commands make paid requests and run the actual agent against reference answers in an isolated temporary database:
+
+```sh
+npm run evaluate
+npm run evaluate -- --held-out
 ```
 
-Results contain `claim_id`, `decision`, `confidence`, `right`, `cost`, and `seconds`. Correctness compares only the decision, since Jev does not generate a payout or rationale. Pass the matching labels when using tiny or held-out data. Reference labels are never sent to Jev. Importing the function does not send a request; the example makes one paid request when executed.
+Only the evaluator reads `data/evals/`. Reference answers never enter the backend database, agent tools or prompts. Results are saved under ignored `outputs/`, with decision accuracy, decision-and-payout accuracy (within $1), difficulty groups, time and cost. Missing cost is reported as unknown. No live accuracy benchmark has been run as part of implementation.
 
-Model: `typesafe/jev-1.13`, as used in the course. See [OpenRouter's Jev documentation](https://openrouter.ai/docs/guides/community/jev).
+## Structure
 
-## LangChain chat example
+- `backend/`: explicit seed import, SQLite, business rules and API operations.
+- `agent/`: `run(claim_id, thread_id)` and tools that access records/instructions through HTTP.
+- `frontend/`: queue, full claim/documents, policy/history, activity, sign-off and read-only instructions.
+- `shared/`: typed contracts and request schemas.
+- `tests/`, `e2e/`: mocked integration tests and Playwright scenarios.
+- `scripts/`: portable command runner, development launcher and isolated evaluator.
+- `data/`, `docs/`: source records and project documentation.
 
-Run `npm start` (or `npm run langchain`) to run the claims agent on the first claim and print its message history, excluding the initial user message. `langchain-chat.ts` configures and exports `llm`. `agent.ts` creates the agent with Luna at low effort, the two claims tools, and `AGENT_SYSTEM_PROMPT`. `index.ts` calls `agent.invoke` with `makeClaimPrompt(claims[0])` and prints model messages, tool calls, tool results, and the final answer. The agent uses the existing `OPENROUTER_API_KEY` and paid Luna model. The separate `llm` export retains `openrouter/free` for standalone experiments. Node.js 22 or newer is required by the LangChain integration.
+API operations and required body schemas are available at `/api/operations`. All POST inputs are required and validated. The pilot has no sign-in, real payments or customer messaging. Handler names are entered manually; the pilot does not verify identities.
 
-## Claims tools
-
-`tools.ts` exports LangChain tools `getPolicy` (`get_policy`) and `recordDecision` (`record_decision`), a `tools` array for an agent, and the in-memory `recorded` object.
-
-```ts
-import { getPolicy, recordDecision, recorded } from './tools.ts';
-
-console.log(await getPolicy.invoke({ policy_id: 'POL-001' }));
-await recordDecision.invoke({
-  claim_id: 'CLM-1001',
-  decision: 'approve',
-  payout: 420,
-  rationale: 'The claim is covered under section 3.',
-});
-console.log(recorded['CLM-1001']);
-```
-
-Use a policy ID from `data/policies.json`. Recording the same claim again overwrites its entry. `index.ts` saves the full `recorded` object as formatted UTF-8 JSON in `recorded.json` after a successful agent run. The file is ignored by Git and is overwritten by the next successful run; it can be opened after Node.js exits. The Zod schema validates argument types and decision options; the payout and rationale rules in the descriptions guide the model but are not additional business-rule checks. The agent in `agent.ts` uses both tools.
-
-## Project documentation
-
-Start with [AGENTS.md](AGENTS.md) for the documentation map and agent instructions. Detailed references: [specification](docs/SPEC.md), [stack](docs/TECH_STACK.md), [code standards](docs/CODE_STANDARDS.md), [process](docs/PROCESS.md), [status](docs/STATUS.md), and [brand](docs/BRAND.md).
+See [AGENTS.md](AGENTS.md), [specification](docs/SPEC.md), [stack](docs/TECH_STACK.md), [status](docs/STATUS.md) and [brand](docs/BRAND.md).
