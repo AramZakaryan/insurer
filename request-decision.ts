@@ -1,12 +1,45 @@
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type { Decision, ReasoningEffort } from './types.ts';
+import type { z } from 'zod';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import { ClaimDecision } from './claim-decision.js';
+import { ClaimDecision } from './claim-decision.ts';
+
+export interface DecisionResponse {
+  choices: { finish_reason: string | null; message: { content?: string | null; refusal?: string | null } }[];
+  usage?: { cost?: number; prompt_tokens?: number; completion_tokens?: number };
+}
+
+export interface DecisionRequest {
+  model: string;
+  messages: ChatCompletionMessageParam[];
+  response_format: ReturnType<typeof zodResponseFormat>;
+  reasoning_effort: ReasoningEffort;
+  max_tokens: number;
+  provider: { require_parameters: boolean; sort: string };
+}
+
+export interface DecisionClient {
+  chat: { completions: { create(request: DecisionRequest): Promise<DecisionResponse> } };
+}
+
+interface Usage {
+  cost: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+}
+
+interface DecisionOptions {
+  model: string;
+  effort: ReasoningEffort;
+  messages: ChatCompletionMessageParam[];
+}
 
 const MAX_ATTEMPTS = 3;
 
-export async function requestDecision(client, { model, effort, messages }, onRetry = console.warn) {
-  const usage = { cost: 0, input_tokens: 0, output_tokens: 0 };
+export async function requestDecision(client: DecisionClient, { model, effort, messages }: DecisionOptions, onRetry: (message: string) => void = console.warn): Promise<Usage & { answer: Decision; attempts: number }> {
+  const usage: Usage = { cost: 0, input_tokens: 0, output_tokens: 0 };
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+  for (let attempt = 1; ; attempt += 1) {
     // Read the raw completion so failed validation does not discard its billed usage.
     const response = await client.chat.completions.create({
       model,
@@ -21,9 +54,9 @@ export async function requestDecision(client, { model, effort, messages }, onRet
       ['cost', 'cost'],
       ['input_tokens', 'prompt_tokens'],
       ['output_tokens', 'completion_tokens'],
-    ]) {
+    ] as const) {
       const value = response.usage?.[source];
-      usage[field] = usage[field] !== null && Number.isFinite(value)
+      usage[field] = usage[field] !== null && typeof value === 'number' && Number.isFinite(value)
         ? usage[field] + value
         : null;
     }
@@ -33,16 +66,16 @@ export async function requestDecision(client, { model, effort, messages }, onRet
       throw new Error('The model refused to decide this claim.');
     }
 
-    let answer;
-    let failure;
-    let validationIssues;
+    let answer: Decision | undefined;
+    let failure: string | undefined;
+    let validationIssues: z.core.$ZodIssue[] | undefined;
     if (choice?.finish_reason === 'length') {
       failure = 'The response reached the 4096-token output limit.';
     } else if (choice?.finish_reason !== 'stop') {
       throw new Error(`Unexpected finish reason: ${choice?.finish_reason ?? 'missing'}.`);
     } else {
       try {
-        const parsed = JSON.parse(choice.message.content);
+        const parsed: unknown = JSON.parse(choice.message.content ?? '');
         const validated = ClaimDecision.safeParse(parsed);
         if (validated.success) answer = validated.data;
         else {

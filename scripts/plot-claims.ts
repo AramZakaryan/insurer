@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { getSampleData } from '../data.js';
-import { plotClaimsByType, plotClaimsByDifficulty } from '../charts.js';
+import { getSampleData } from '../data.ts';
+import { plotClaimsByType, plotClaimsByDifficulty } from '../charts.ts';
 
 const TINY = false;
 
@@ -18,6 +18,6 @@ try {
   }
   execFileSync('open', chartPaths);
 } catch (error) {
-  console.error(`Could not display chart: ${error.message}`);
+  console.error(`Could not display chart: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 }

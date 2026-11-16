@@ -1,7 +1,7 @@
 import { createAgent } from 'langchain';
-import { luna } from './langchain-chat.js';
-import { getPolicy, recordDecision } from './tools.js';
-import { AGENT_SYSTEM_PROMPT } from './prompt.js';
+import { luna } from './langchain-chat.ts';
+import { getPolicy, recordDecision } from './tools.ts';
+import { AGENT_SYSTEM_PROMPT } from './prompt.ts';
 
 export const agent = createAgent({
   model: luna,

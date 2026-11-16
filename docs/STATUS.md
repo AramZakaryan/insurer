@@ -1,10 +1,12 @@
 # Status
 
-A hello-world skeleton with every check in place:
+The existing claims CLI is migrated to TypeScript with strict type checking.
 
-- `backend/`: one route, `GET /api/health`
-- `agent/`: the entry point `run(claim_id, thread_id)`, with one tool that calls the health route
-- `frontend/`: one page that shows whether the backend is up
-- `e2e/`: one test of that page
+- Application modules, chart/table scripts and tests use `.ts` files.
+- `npm start` runs the LangChain agent on the first claim through OpenRouter.
+- The agent retrieves the policy and records its decision through tools. Recorded decisions are printed and saved to ignored `recorded.json`.
+- Direct model and Jev evaluation helpers, score summaries and local charts remain available.
+- `npm run typecheck` checks types; `npm test` runs mocked tests without paid model calls.
+- Development instructions cover individual changes without requiring a separate plan file.
 
-Nothing of Insurer is built yet. Update this file as you build.
+The backend, frontend, database and end-to-end pilot described in the specification are not built yet.

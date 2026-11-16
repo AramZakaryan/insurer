@@ -1,20 +1,22 @@
+import type { DecisionsRequest } from '@openrouter/sdk/models';
+import type { JevResponse } from '../jev.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getSampleData } from '../data.js';
-import { decideWithJev, JEV, JEV_QUESTION } from '../jev.js';
-import { policies, policyWording } from '../policies.js';
-import { requestDecisions } from '../openrouter-decisions.js';
+import { getSampleData } from '../data.ts';
+import { decideWithJev, JEV, JEV_QUESTION } from '../jev.ts';
+import { policies, policyWording } from '../policies.ts';
+import { requestDecisions } from '../openrouter-decisions.ts';
 
 const { claims, labels } = getSampleData();
 const claim = claims[0];
 
-function fakeClient(response) {
-  const request = async (payload) => {
+function fakeClient(response: JevResponse | Error) {
+  const request = async (payload: DecisionsRequest) => {
     request.calls.push(payload);
     if (response instanceof Error) throw response;
     return response;
   };
-  request.calls = [];
+  request.calls = [] as DecisionsRequest[];
   return request;
 }
 
@@ -61,7 +63,8 @@ test('rejects missing policy or label before sending a request', async () => {
 
 test('includes claim and model when an API request fails', async () => {
   const error = new Error('402 Insufficient credits');
-  await assert.rejects(decideWithJev(claim, labels, fakeClient(error)), (received) => {
+  await assert.rejects(decideWithJev(claim, labels, fakeClient(error)), (received: unknown) => {
+    assert.ok(received instanceof Error);
     assert.ok(received.message.includes(claim.claim_id));
     assert.ok(received.message.includes(JEV));
     assert.equal(received.cause, error);
@@ -76,7 +79,7 @@ test('SDK sends the Decisions endpoint, bearer key, raw body, and abort signal',
     if (previousKey === undefined) delete process.env.OPENROUTER_API_KEY;
     else process.env.OPENROUTER_API_KEY = previousKey;
   });
-  const fetchMock = t.mock.method(globalThis, 'fetch', async (input, init) => {
+  const fetchMock = t.mock.method(globalThis, 'fetch', async (input: string | URL | Request, init?: RequestInit) => {
     const request = new Request(input, init);
     assert.equal(request.url, 'https://openrouter.ai/api/alpha/decisions');
     assert.equal(request.method, 'POST');
@@ -111,6 +114,6 @@ test('SDK reports HTTP status and server error body', async (t) => {
   t.mock.method(globalThis, 'fetch', async () => Response.json({ error: { message: 'Insufficient credits', code: 402 } }, { status: 402 }));
   await assert.rejects(
     requestDecisions({ model: JEV, state: {}, questions: { decision: JEV_QUESTION } }),
-    (error) => error.statusCode === 402 && error.message.includes('Insufficient credits'),
+    (error: unknown) => error instanceof Error && 'statusCode' in error && error.statusCode === 402 && error.message.includes('Insufficient credits'),
   );
 });

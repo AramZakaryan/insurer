@@ -1,4 +1,6 @@
-import { policies, policyWording } from './policies.js';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type { Claim } from './types.ts';
+import { policies, policyWording } from './policies.ts';
 
 export const INSTRUCTIONS = `You are a claims handler at UnderCover Travel Insurance.
 Decide the claim you are given, using the policy wording below and the customer's policy record.
@@ -17,11 +19,11 @@ Use your tools to look up the customer's policy record and to record your decisi
 ${policyWording}
 `;
 
-export function makeClaimPrompt(claim) {
+export function makeClaimPrompt(claim: Claim) {
   return JSON.stringify(claim, null, 2);
 }
 
-export function makeUserPrompt(claim) {
+export function makeUserPrompt(claim: Claim) {
   const policy = policies[claim.policy_id];
   if (!policy) {
     throw new Error(`Policy record not found: ${claim.policy_id}`);
@@ -37,7 +39,7 @@ ${JSON.stringify(claim, null, 2)}
 `;
 }
 
-export function makeMessages(claim) {
+export function makeMessages(claim: Claim): ChatCompletionMessageParam[] {
   return [
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: makeUserPrompt(claim) },

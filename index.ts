@@ -1,8 +1,9 @@
+import { isAIMessage, isToolMessage } from '@langchain/core/messages';
 import { writeFileSync } from 'node:fs';
-import { agent } from './agent.js';
-import { getSampleData } from './data.js';
-import { makeClaimPrompt } from './prompt.js';
-import { recorded } from './tools.js';
+import { agent } from './agent.ts';
+import { getSampleData } from './data.ts';
+import { makeClaimPrompt } from './prompt.ts';
+import { recorded } from './tools.ts';
 
 const { claims } = getSampleData();
 
@@ -20,10 +21,10 @@ try {
   for (const message of result.messages.slice(1)) {
     console.log(`\n=== ${message.getType()} ===`);
     console.log(message.content);
-    if (message.tool_calls?.length) {
+    if (isAIMessage(message) && message.tool_calls?.length) {
       console.dir(message.tool_calls, { depth: null });
     }
-    if (message.tool_call_id) {
+    if (isToolMessage(message)) {
       console.log(`tool_call_id: ${message.tool_call_id}`);
     }
   }
@@ -32,6 +33,6 @@ try {
   console.dir(recorded, { depth: null });
   console.log('Saved to recorded.json');
 } catch (error) {
-  console.error(`Error: ${error.message}`);
+  console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 }

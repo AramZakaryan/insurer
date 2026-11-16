@@ -1,8 +1,9 @@
+import type { Decision } from './types.ts';
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { policies } from './policies.js';
+import { policies } from './policies.ts';
 
-export const recorded = {};
+export const recorded: Record<string, Decision> = {};
 
 export const getPolicy = tool(
   ({ policy_id }) => {

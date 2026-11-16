@@ -1,5 +1,6 @@
-export function showMisses(results, labels) {
-  const dollars = (amount) => amount.toLocaleString('en-US', {
+import type { Labels, ScoredResult } from './types.ts';
+export function showMisses(results: ScoredResult[], labels: Labels) {
+  const dollars = (amount: number) => amount.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
-import { verifyApiKey } from './verify-api-key.js';
+import { verifyApiKey } from './verify-api-key.ts';
 
 dotenv.config({ override: true, quiet: true });
 

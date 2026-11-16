@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "chart": "node scripts/plot-claims.js",
-    "table": "node scripts/show-table.js",
-    "test": "node --test",
-    "langchain": "node index.js"
+    "start": "node scripts/run.mjs start",
+    "chart": "node scripts/run.mjs chart",
+    "table": "node scripts/run.mjs table",
+    "test": "node scripts/run.mjs test",
+    "langchain": "node scripts/run.mjs langchain",
+    "typecheck": "node scripts/run.mjs typecheck"
   },
   "dependencies": {
     "@langchain/core": "^1.4.1",
@@ -19,5 +20,10 @@
     "openai": "^7.57.0",
     "plotly.js-dist-min": "^4.3.0",
     "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }

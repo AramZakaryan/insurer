@@ -1,18 +1,18 @@
 ## Implementing
 
-When asked to implement the plan, as in "Please implement the plan for the pilot", build every phase in order without stopping. For each phase:
+For each requested change:
 
 1. Build it, with tests.
 2. Check every success criterion and fix whatever fails.
-3. Tick off its criteria in `docs/PLAN.md` and update `docs/STATUS.md`.
-4. Commit. The pre-commit hook runs the checks; if it fails, fix the problem and commit again.
+3. Update `docs/STATUS.md`.
+4. Commit only when explicitly authorized. The pre-commit hook runs the checks; if it fails, fix the problem before committing.
 
-When the last phase is done, run `npm run test` and report the results.
+When the change is done, run `npm run test` and report the results.
 
 ## Rules
 
 - Add tests with each change. Tests never call a model; use a stub model.
-- Outside a plan, commit each change once you have checked it.
+- Check each change before requesting commit approval.
 - Run `npm run test` before you hand work over.
 - Never use `git commit --no-verify`.
 - Never lower a threshold, turn off a rule or exclude a file to get a green run. If a rule looks wrong, stop and ask.

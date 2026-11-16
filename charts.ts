@@ -2,9 +2,23 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
+interface ChartRow {
+  claim_type: string;
+  decision: string;
+  difficulty: string;
+}
+
+interface ChartOptions {
+  field: 'claim_type' | 'difficulty';
+  title: string;
+  axisTitle: string;
+  filename: string;
+  categoryOrder?: string[];
+}
+
 const require = createRequire(import.meta.url);
 
-export function plotClaimsByType(data) {
+export function plotClaimsByType(data: ChartRow[]) {
   return plotClaims(data, {
     field: 'claim_type',
     title: 'Claims by type',
@@ -13,7 +27,7 @@ export function plotClaimsByType(data) {
   });
 }
 
-export function plotClaimsByDifficulty(data) {
+export function plotClaimsByDifficulty(data: ChartRow[]) {
   return plotClaims(data, {
     field: 'difficulty',
     title: 'Claims by difficulty',
@@ -23,7 +37,7 @@ export function plotClaimsByDifficulty(data) {
   });
 }
 
-function plotClaims(data, { field, title, axisTitle, filename, categoryOrder }) {
+function plotClaims(data: ChartRow[], { field, title, axisTitle, filename, categoryOrder }: ChartOptions) {
   const decisions = [...new Set(data.map((row) => row.decision))];
   const traces = decisions.map((decision) => ({
     type: 'histogram',
@@ -33,16 +47,11 @@ function plotClaims(data, { field, title, axisTitle, filename, categoryOrder }) 
   const layout = {
     title: { text: title },
     barmode: 'relative',
-    xaxis: { title: { text: axisTitle }, type: 'category' },
+    xaxis: { title: { text: axisTitle }, type: 'category', ...(categoryOrder ? { categoryorder: 'array', categoryarray: categoryOrder } : {}) },
     yaxis: { title: { text: 'Number of claims' }, dtick: 1 },
     legend: { title: { text: 'Decision' } },
     margin: { b: 120 },
   };
-
-  if (categoryOrder) {
-    layout.xaxis.categoryorder = 'array';
-    layout.xaxis.categoryarray = categoryOrder;
-  }
 
   const plotly = readFileSync(require.resolve('plotly.js-dist-min'), 'utf8')
     .replace(/<\/script/gi, '<\\/script');

@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { ChatOpenAI } from '@langchain/openai';
-import { verifyApiKey } from './verify-api-key.js';
+import { verifyApiKey } from './verify-api-key.ts';
 
 dotenv.config({ override: true, quiet: true });
 
@@ -22,7 +22,7 @@ export const luna = new ChatOpenAI({
   model: 'openai/gpt-6-luna',
   apiKey: openrouterApiKey,
   configuration: { baseURL: OPENROUTER_BASE_URL },
-  reasoningEffort: 'low',
+  modelKwargs: { reasoning_effort: 'low' },
   timeout: 120_000,
   maxRetries: 5,
 });

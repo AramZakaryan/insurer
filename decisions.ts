@@ -1,9 +1,10 @@
+import type { Claim, ModelResult, ReasoningEffort } from './types.ts';
 import { performance } from 'node:perf_hooks';
-import { openrouter } from './openrouter.js';
-import { requestDecision } from './request-decision.js';
-import { makeMessages } from './prompt.js';
+import { openrouter } from './openrouter.ts';
+import { requestDecision } from './request-decision.ts';
+import { makeMessages } from './prompt.ts';
 
-export async function decide(claim, model, effort) {
+export async function decide(claim: Claim, model: string, effort: ReasoningEffort): Promise<ModelResult> {
   const start = performance.now();
   try {
     const { answer, cost, input_tokens, output_tokens, attempts } = await requestDecision(
@@ -27,6 +28,6 @@ export async function decide(claim, model, effort) {
       seconds: Math.round((performance.now() - start) / 100) / 10,
     };
   } catch (error) {
-    throw new Error(`${claim.claim_id} (${model}, ${effort}): ${error.message}`, { cause: error });
+    throw new Error(`${claim.claim_id} (${model}, ${effort}): ${error instanceof Error ? error.message : String(error)}`, { cause: error });
   }
 }

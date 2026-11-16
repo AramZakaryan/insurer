@@ -1,19 +1,21 @@
+import type { DecisionRequest, DecisionResponse } from '../request-decision.ts';
+import type { ReasoningEffort } from '../types.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { requestDecision } from '../request-decision.js';
+import { requestDecision } from '../request-decision.ts';
 
 const answer = { rationale: 'Section 3 covers this expense.', decision: 'approve', payout: 420 };
-const options = { model: 'test-model', effort: 'low', messages: [{ role: 'user', content: 'Test claim' }] };
+const options = { model: 'test-model', effort: 'low' as ReasoningEffort, messages: [{ role: 'user' as const, content: 'Test claim' }] };
 
-function completion(content = JSON.stringify(answer), finish_reason = 'stop', usage = { cost: 0.01, prompt_tokens: 100, completion_tokens: 20 }) {
+function completion(content = JSON.stringify(answer), finish_reason = 'stop', usage: DecisionResponse['usage'] = { cost: 0.01, prompt_tokens: 100, completion_tokens: 20 }) {
   return { choices: [{ finish_reason, message: { content } }], usage };
 }
 
-function fakeClient(responses) {
-  const calls = [];
+function fakeClient(responses: (DecisionResponse | Error)[]) {
+  const calls: DecisionRequest[] = [];
   return {
     calls,
-    chat: { completions: { create: async (request) => {
+    chat: { completions: { create: async (request: DecisionRequest) => {
       calls.push(request);
       const next = responses[calls.length - 1];
       if (next instanceof Error) throw next;
@@ -25,7 +27,7 @@ function fakeClient(responses) {
 
 test('retries malformed JSON and counts both billed attempts', async () => {
   const client = fakeClient([completion('{"rationale":'), completion()]);
-  const warnings = [];
+  const warnings: string[] = [];
   const result = await requestDecision(client, options, (message) => warnings.push(message));
   assert.deepEqual(result, { answer, cost: 0.02, input_tokens: 200, output_tokens: 40, attempts: 2 });
   assert.equal(warnings.length, 1);
@@ -37,7 +39,7 @@ test('retries malformed JSON and counts both billed attempts', async () => {
 
 test('retries valid JSON with invalid schema', async () => {
   const client = fakeClient([completion(JSON.stringify({ ...answer, payout: '420' })), completion()]);
-  const warnings = [];
+  const warnings: string[] = [];
   assert.equal((await requestDecision(client, options, (message) => warnings.push(message))).attempts, 2);
   assert.match(warnings[0], /validation_issues/);
   assert.match(warnings[0], /payout/);

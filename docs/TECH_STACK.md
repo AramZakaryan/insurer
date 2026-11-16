@@ -8,3 +8,7 @@
 
 
 Node 26. The OpenRouter key is `OPENROUTER_API_KEY` in `.env`.
+
+## Current implementation
+
+The current CLI uses TypeScript in strict mode, executed through `tsx`. Run `npm run typecheck` for static checks and `npm test` for mocked tests. The backend, frontend and e2e directories above describe the planned pilot architecture.

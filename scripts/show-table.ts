@@ -1,4 +1,4 @@
-import { getSampleData } from '../data.js';
+import { getSampleData } from '../data.ts';
 
 const TINY = false;
 

@@ -4,7 +4,7 @@ Use the project documentation below when working in this repository. Read `SPEC.
 
 - [Specification](docs/SPEC.md): purpose, current behavior, evaluation rules, and limits.
 - [Technology stack](docs/TECH_STACK.md): dependencies, modules, and commands.
-- [Code standards](docs/CODE_STANDARDS.md): JavaScript conventions and module responsibilities.
+- [Code standards](docs/CODE_STANDARDS.md): TypeScript conventions and module responsibilities.
 - [Process](docs/PROCESS.md): implementation, validation, and delivery.
 - [Status](docs/STATUS.md): implemented features and remaining limitations.
 - [Brand](docs/BRAND.md): project name, terminology, and tone.

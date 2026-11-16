@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getPolicy, recordDecision, recorded, tools } from '../tools.js';
-import { policies } from '../policies.js';
+import { getPolicy, recordDecision, recorded, tools } from '../tools.ts';
+import { policies } from '../policies.ts';
 
 test('policy tool returns the complete policy as JSON or a not-found message', async () => {
   const policy_id = Object.keys(policies)[0];
@@ -14,7 +14,7 @@ test('policy tool returns the complete policy as JSON or a not-found message', a
 test('decision tool records and overwrites a claim in memory', async (t) => {
   const claim_id = 'test-claim';
   t.after(() => delete recorded[claim_id]);
-  const first = { claim_id, decision: 'approve', payout: 420, rationale: 'Covered under section 3.' };
+  const first = { claim_id, decision: 'approve' as const, payout: 420, rationale: 'Covered under section 3.' };
   assert.equal(await recordDecision.invoke(first), 'Recorded approve on test-claim');
   assert.deepEqual(recorded[claim_id], { decision: 'approve', payout: 420, rationale: first.rationale });
   await recordDecision.invoke({ ...first, decision: 'refer', payout: 0 });
@@ -23,8 +23,8 @@ test('decision tool records and overwrites a claim in memory', async (t) => {
 
 test('LangChain rejects invalid arguments before recording a decision', async () => {
   const claim_id = 'invalid-test-claim';
-  await assert.rejects(recordDecision.invoke({ claim_id, decision: 'unknown', payout: 0, rationale: 'Example' }));
-  await assert.rejects(recordDecision.invoke({ claim_id, decision: 'approve', payout: '420', rationale: 'Example' }));
-  await assert.rejects(recordDecision.invoke({ claim_id, decision: 'approve', payout: 420 }));
+  await assert.rejects(recordDecision.invoke({ name: 'record_decision', type: 'tool_call', id: 'invalid-enum', args: { claim_id, decision: 'unknown', payout: 0, rationale: 'Example' } }));
+  await assert.rejects(recordDecision.invoke({ name: 'record_decision', type: 'tool_call', id: 'invalid-payout', args: { claim_id, decision: 'approve', payout: '420', rationale: 'Example' } }));
+  await assert.rejects(recordDecision.invoke({ name: 'record_decision', type: 'tool_call', id: 'missing-rationale', args: { claim_id, decision: 'approve', payout: 420 } }));
   assert.equal(Object.hasOwn(recorded, claim_id), false);
 });

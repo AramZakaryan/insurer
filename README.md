@@ -1,6 +1,6 @@
 # insurer
 
-Node.js ES modules project for evaluating travel insurance claim decisions through OpenRouter using its OpenAI-compatible API.
+TypeScript ES modules project for evaluating travel insurance claim decisions through OpenRouter using its OpenAI-compatible API.
 
 ## Setup
 
@@ -12,6 +12,8 @@ cp .env.example .env
 Add your OpenRouter API key to `OPENROUTER_API_KEY` in `.env`. The file is ignored by Git. Existing `.env` files do not need to be replaced.
 
 ## Run
+
+TypeScript runs directly through `tsx`; a separate build is not needed.
 
 ```sh
 npm start
@@ -28,13 +30,22 @@ npm run table
 
 These commands display the local claims data in a browser without calling the API. Generated files are written to the ignored `outputs/` directory.
 
+## Checks
+
+```sh
+npm run typecheck
+npm test
+```
+
+Type checking uses strict mode. Tests use mocked responses and do not make paid model requests.
+
 ## Jev decisions
 
-`jev.js` exports `JEV`, `JEV_QUESTION`, and `decideWithJev`. It uses the official `@openrouter/sdk` and the same `OPENROUTER_API_KEY`, with a 60-second timeout. Jev calls the separate Decisions endpoint, not Chat Completions.
+`jev.ts` exports `JEV`, `JEV_QUESTION`, and `decideWithJev`. It uses the official `@openrouter/sdk` and the same `OPENROUTER_API_KEY`, with a 60-second timeout. Jev calls the separate Decisions endpoint, not Chat Completions.
 
-```js
-import { getSampleData } from './data.js';
-import { decideWithJev } from './jev.js';
+```ts
+import { getSampleData } from './data.ts';
+import { decideWithJev } from './jev.ts';
 
 const { claims, labels } = getSampleData();
 const first = await decideWithJev(claims[0], labels);
@@ -47,14 +58,14 @@ Model: `typesafe/jev-1.13`, as used in the course. See [OpenRouter's Jev documen
 
 ## LangChain chat example
 
-Run `npm start` (or `npm run langchain`) to run the claims agent on the first claim and print its message history, excluding the initial user message. `langchain-chat.js` configures and exports `llm`. `agent.js` creates the agent with Luna at low effort, the two claims tools, and `AGENT_SYSTEM_PROMPT`. `index.js` calls `agent.invoke` with `makeClaimPrompt(claims[0])` and prints model messages, tool calls, tool results, and the final answer. The agent uses the existing `OPENROUTER_API_KEY` and paid Luna model. The separate `llm` export retains `openrouter/free` for standalone experiments. Node.js 22 or newer is required by the LangChain integration.
+Run `npm start` (or `npm run langchain`) to run the claims agent on the first claim and print its message history, excluding the initial user message. `langchain-chat.ts` configures and exports `llm`. `agent.ts` creates the agent with Luna at low effort, the two claims tools, and `AGENT_SYSTEM_PROMPT`. `index.ts` calls `agent.invoke` with `makeClaimPrompt(claims[0])` and prints model messages, tool calls, tool results, and the final answer. The agent uses the existing `OPENROUTER_API_KEY` and paid Luna model. The separate `llm` export retains `openrouter/free` for standalone experiments. Node.js 22 or newer is required by the LangChain integration.
 
 ## Claims tools
 
-`tools.js` exports LangChain tools `getPolicy` (`get_policy`) and `recordDecision` (`record_decision`), a `tools` array for an agent, and the in-memory `recorded` object.
+`tools.ts` exports LangChain tools `getPolicy` (`get_policy`) and `recordDecision` (`record_decision`), a `tools` array for an agent, and the in-memory `recorded` object.
 
-```js
-import { getPolicy, recordDecision, recorded } from './tools.js';
+```ts
+import { getPolicy, recordDecision, recorded } from './tools.ts';
 
 console.log(await getPolicy.invoke({ policy_id: 'POL-001' }));
 await recordDecision.invoke({
@@ -66,7 +77,7 @@ await recordDecision.invoke({
 console.log(recorded['CLM-1001']);
 ```
 
-Use a policy ID from `data/policies.json`. Recording the same claim again overwrites its entry. `index.js` saves the full `recorded` object as formatted UTF-8 JSON in `recorded.json` after a successful agent run. The file is ignored by Git and is overwritten by the next successful run; it can be opened after Node.js exits. The Zod schema validates argument types and decision options; the payout and rationale rules in the descriptions guide the model but are not additional business-rule checks. The agent in `agent.js` uses both tools.
+Use a policy ID from `data/policies.json`. Recording the same claim again overwrites its entry. `index.ts` saves the full `recorded` object as formatted UTF-8 JSON in `recorded.json` after a successful agent run. The file is ignored by Git and is overwritten by the next successful run; it can be opened after Node.js exits. The Zod schema validates argument types and decision options; the payout and rationale rules in the descriptions guide the model but are not additional business-rule checks. The agent in `agent.ts` uses both tools.
 
 ## Project documentation
 
