@@ -1,4 +1,4 @@
-# simple_langchain_project
+# insurer
 
 Node.js ES modules project for evaluating travel insurance claim decisions through OpenRouter using its OpenAI-compatible API.
 
@@ -17,11 +17,9 @@ Add your OpenRouter API key to `OPENROUTER_API_KEY` in `.env`. The file is ignor
 npm start
 ```
 
-This evaluates all 25 claims with `openai/gpt-6-luna` at low effort and Jev (50 paid requests before any LLM retries). The first Jev result is printed and reused in the full evaluation. Luna medium and Gemini examples remain commented out in `index.js`. Each response must match the `ClaimDecision` Zod schema. Malformed JSON, schema mismatches, and truncated responses are retried up to three attempts per claim. Retry warnings include the claim ID and model. Refusals and unexpected finish reasons stop immediately; API failures retain the SDK’s existing retry policy. Exhausted attempts stop with a clear error. Retries can add paid requests beyond the initial 50.
+This runs the LangChain claims agent on the first sample claim using `openai/gpt-6-luna` at low effort through OpenRouter. The agent can retrieve the customer's policy and record its decision through tools. The application prints the message history and recorded decisions and saves a snapshot to the ignored `recorded.json` file. A run can make multiple paid model requests.
 
-The active run prints decision-only accuracy for Jev and Luna, plus Jev totals and a confidence table (`confidence >= 0.9`). In that table, `sum` is the number of correct decisions and `count` is the number of claims in the group. The commented comparison code shows accuracy by difficulty and totals by model and effort. A decision is correct when its decision matches the reference label and its payout differs by at most $1. Reference decisions are used for scoring only; they are not sent to the model.
-
-Results include the number of attempts, input/output token counts, and the cost reported by OpenRouter, summed across all received attempts (including invalid responses). If cost is absent, results report `cost: null` / `unknown cost`.
+Direct LLM and Jev evaluation helpers remain available in their modules; they are not the default `npm start` workflow. See [SPEC.md](docs/SPEC.md) for scoring rules and current limitations.
 
 ```sh
 npm run chart
@@ -49,7 +47,7 @@ Model: `typesafe/jev-1.13`, as used in the course. See [OpenRouter's Jev documen
 
 ## LangChain chat example
 
-Run `npm start` (or `npm run langchain`) to run the claims agent on the first claim and print its message history, excluding the initial user message. `langchain-chat.js` configures and exports `llm`. `agent.js` creates the agent with Luna at low effort, the two claims tools, and `AGENT_SYSTEM_PROMPT`. `index.js` calls `agent.invoke` with `makeClaimPrompt(claims[0])` and prints model messages, tool calls, tool results, and the final answer. It uses the existing `OPENROUTER_API_KEY` and `openrouter/free` model router; free-model availability and request limits apply. Node.js 22 or newer is required by the LangChain integration.
+Run `npm start` (or `npm run langchain`) to run the claims agent on the first claim and print its message history, excluding the initial user message. `langchain-chat.js` configures and exports `llm`. `agent.js` creates the agent with Luna at low effort, the two claims tools, and `AGENT_SYSTEM_PROMPT`. `index.js` calls `agent.invoke` with `makeClaimPrompt(claims[0])` and prints model messages, tool calls, tool results, and the final answer. The agent uses the existing `OPENROUTER_API_KEY` and paid Luna model. The separate `llm` export retains `openrouter/free` for standalone experiments. Node.js 22 or newer is required by the LangChain integration.
 
 ## Claims tools
 
@@ -69,3 +67,7 @@ console.log(recorded['CLM-1001']);
 ```
 
 Use a policy ID from `data/policies.json`. Recording the same claim again overwrites its entry. `index.js` saves the full `recorded` object as formatted UTF-8 JSON in `recorded.json` after a successful agent run. The file is ignored by Git and is overwritten by the next successful run; it can be opened after Node.js exits. The Zod schema validates argument types and decision options; the payout and rationale rules in the descriptions guide the model but are not additional business-rule checks. The agent in `agent.js` uses both tools.
+
+## Project documentation
+
+Start with [AGENTS.md](AGENTS.md) for the documentation map and agent instructions. Detailed references: [specification](docs/SPEC.md), [stack](docs/TECH_STACK.md), [code standards](docs/CODE_STANDARDS.md), [process](docs/PROCESS.md), [status](docs/STATUS.md), and [brand](docs/BRAND.md).
