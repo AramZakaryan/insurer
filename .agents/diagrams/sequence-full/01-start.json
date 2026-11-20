@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "01 · Запуск и инструкции",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 640]
+  },
+  "participants": [
+    {
+      "id": "click-user",
+      "type": "external",
+      "label": "Пользователь"
+    },
+    {
+      "id": "browser-ui",
+      "type": "frontend",
+      "label": "Frontend",
+      "sublabel": "Браузер"
+    },
+    {
+      "id": "express-api",
+      "type": "backend",
+      "label": "Backend",
+      "sublabel": "HTTP :3001"
+    },
+    {
+      "id": "agent-code",
+      "type": "backend",
+      "label": "Сервис агента",
+      "sublabel": "HTTP :3002"
+    },
+    {
+      "id": "sqlite-data",
+      "type": "database",
+      "label": "SQLite",
+      "sublabel": "Таблицы claims и runs"
+    }
+  ],
+  "messages": [
+    {
+      "id": "press-run",
+      "from": "click-user",
+      "to": "browser-ui",
+      "y": 160,
+      "label": "Нажал Run agent",
+      "note": "Frontend создаёт T = UUID"
+    },
+    {
+      "id": "send-run-request",
+      "from": "browser-ui",
+      "to": "express-api",
+      "y": 188,
+      "label": "POST /api/claims/:id/run",
+      "note": "JSON: {thread_id: T}",
+      "variant": "emphasis"
+    },
+    {
+      "id": "read-state",
+      "from": "express-api",
+      "to": "sqlite-data",
+      "y": 216,
+      "label": "SELECT * FROM claims WHERE id = :id",
+      "note": "При наличии thread_id также читается runs"
+    },
+    {
+      "id": "waiting-result",
+      "from": "sqlite-data",
+      "to": "express-api",
+      "y": 244,
+      "label": "Заявка найдена: status = waiting",
+      "variant": "return"
+    },
+    {
+      "id": "dispatch-http",
+      "from": "express-api",
+      "to": "agent-code",
+      "label": "POST /runs {claim_id: id, thread_id: T}",
+      "variant": "emphasis",
+      "y": 272
+    },
+    {
+      "id": "agent-accepted",
+      "from": "agent-code",
+      "to": "express-api",
+      "label": "HTTP 202: запуск принят агентом",
+      "variant": "return",
+      "y": 300
+    },
+    {
+      "id": "accepted-ui",
+      "from": "express-api",
+      "to": "browser-ui",
+      "y": 328,
+      "label": "HTTP 202 Accepted",
+      "note": "JSON: {thread_id: T}",
+      "variant": "return"
+    },
+    {
+      "id": "agent-start-request",
+      "from": "agent-code",
+      "to": "express-api",
+      "y": 356,
+      "label": "POST /api/claims/:id/start",
+      "note": "JSON: {thread_id: T}",
+      "variant": "emphasis"
+    },
+    {
+      "id": "begin-start",
+      "from": "express-api",
+      "to": "sqlite-data",
+      "label": "BEGIN IMMEDIATE; проверить runs и claims",
+      "variant": "security",
+      "y": 384
+    },
+    {
+      "id": "insert-run",
+      "from": "express-api",
+      "to": "sqlite-data",
+      "label": "Таблица runs: INSERT (T, id, 'running')",
+      "variant": "security",
+      "y": 412
+    },
+    {
+      "id": "update-claim",
+      "from": "express-api",
+      "to": "sqlite-data",
+      "label": "Таблица claims: UPDATE status='in_progress', thread_id=T",
+      "variant": "security",
+      "y": 440
+    },
+    {
+      "id": "commit-start",
+      "from": "express-api",
+      "to": "sqlite-data",
+      "label": "COMMIT — сохранить обе записи",
+      "variant": "security",
+      "y": 468
+    },
+    {
+      "id": "claim-started-response",
+      "from": "express-api",
+      "to": "agent-code",
+      "y": 496,
+      "label": "HTTP 200: {created: true, claim: ...}",
+      "note": "Теперь агент получает инструкции через API",
+      "variant": "return"
+    },
+    {
+      "id": "get-instructions",
+      "from": "agent-code",
+      "to": "express-api",
+      "label": "GET /api/instructions",
+      "variant": "emphasis",
+      "note": "Агент запрашивает инструкции через API, без чтения файлов",
+      "y": 524
+    },
+    {
+      "id": "instructions-response",
+      "from": "express-api",
+      "to": "agent-code",
+      "label": "HTTP 200: {instructions, policy_wording}",
+      "variant": "return",
+      "note": "Код агента объединяет эти два поля в systemPrompt",
+      "y": 552
+    }
+  ]
+}

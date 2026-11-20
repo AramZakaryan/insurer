@@ -61,7 +61,9 @@ const commands = {
     'scripts/evaluate.ts',
     ...process.argv.slice(3),
   ],
-  start: ['--import', 'tsx', 'backend/server.ts'],
+  start: ['scripts/dev.mjs', '--built'],
+  'start:backend': ['--import', 'tsx', 'backend/server.ts'],
+  'start:agent': ['--import', 'tsx', 'agent/server.ts'],
   typecheck: [
     fileURLToPath(
       new URL('./bin/tsc', import.meta.resolve('typescript/package.json')),

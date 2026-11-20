@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Insurer · Architecture",
+    "quality_profile": "showcase",
+    "animation": "none",
+    "viewBox": [1200, 580]
+  },
+  "components": [
+    {
+      "id": "person",
+      "type": "external",
+      "label": "Пользователь",
+      "pos": [35, 130],
+      "size": [155, 70]
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Frontend",
+      "sublabel": "Run agent; UUID = T",
+      "pos": [300, 130],
+      "size": [175, 70]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Backend API",
+      "sublabel": "Процесс :3001",
+      "pos": [610, 130],
+      "size": [180, 70]
+    },
+    {
+      "id": "runner",
+      "type": "backend",
+      "label": "Сервис агента",
+      "sublabel": "Процесс :3002",
+      "pos": [960, 130],
+      "size": [180, 70]
+    },
+    {
+      "id": "sqlite",
+      "type": "database",
+      "label": "SQLite",
+      "sublabel": "claims / runs",
+      "pos": [610, 350],
+      "size": [180, 70]
+    },
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "OpenRouter / LLM",
+      "sublabel": "После /instructions",
+      "pos": [960, 350],
+      "size": [180, 70]
+    }
+  ],
+  "connections": [
+    {
+      "id": "click",
+      "from": "person",
+      "to": "browser",
+      "label": "Нажать"
+    },
+    {
+      "id": "http-run",
+      "from": "browser",
+      "to": "api",
+      "label": "POST /run",
+      "variant": "emphasis"
+    },
+    {
+      "id": "function",
+      "from": "api",
+      "to": "runner",
+      "label": "POST /runs"
+    },
+    {
+      "id": "http-start",
+      "from": "runner",
+      "to": "api",
+      "label": "POST /start",
+      "variant": "dashed",
+      "labelDy": 32
+    },
+    {
+      "id": "db",
+      "from": "api",
+      "to": "sqlite",
+      "label": "SQL",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [740, 275]
+    },
+    {
+      "id": "next-llm",
+      "from": "runner",
+      "to": "llm",
+      "label": "Следующий этап",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [1100, 275]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Контракт",
+      "items": [
+        "Backend → агент: POST /runs {claim_id, thread_id}; ответ 202",
+        "Агент → backend: /api/claims/:id/start и последующие HTTP-запросы"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Insurer · Dataflow",
+    "quality_profile": "showcase",
+    "animation": "none",
+    "viewBox": [1080, 360]
+  },
+  "stages": [
+    {
+      "label": "Источник"
+    },
+    {
+      "label": "Запрос UI"
+    },
+    {
+      "label": "Сервис агента"
+    },
+    {
+      "label": "Сохранение"
+    },
+    {
+      "label": "Ответ"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ids",
+      "type": "frontend",
+      "label": "id + T",
+      "sublabel": "CLM-1001 + UUID",
+      "stage": 0,
+      "row": 0,
+      "width": 130
+    },
+    {
+      "id": "run-body",
+      "type": "backend",
+      "label": "JSON /run",
+      "sublabel": "{thread_id:T}",
+      "stage": 1,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "start-body",
+      "type": "backend",
+      "label": "JSON /runs",
+      "sublabel": "{claim_id, thread_id}",
+      "stage": 2,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "records",
+      "type": "database",
+      "label": "claims / runs",
+      "sublabel": "in_progress / running",
+      "stage": 3,
+      "row": 0,
+      "width": 150
+    },
+    {
+      "id": "result",
+      "type": "backend",
+      "label": "Ответ агенту",
+      "sublabel": "{created:true,claim}",
+      "stage": 4,
+      "row": 0,
+      "width": 150
+    }
+  ],
+  "flows": [
+    {
+      "from": "ids",
+      "to": "run-body",
+      "label": "T",
+      "variant": "emphasis"
+    },
+    {
+      "from": "run-body",
+      "to": "start-body",
+      "label": "id, T",
+      "variant": "emphasis"
+    },
+    {
+      "from": "start-body",
+      "to": "records",
+      "label": "/start",
+      "variant": "emphasis"
+    },
+    {
+      "from": "records",
+      "to": "result",
+      "label": "Данные",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Что передаётся",
+      "items": [
+        "id берётся из URL /run, а T — из его JSON",
+        "POST /runs передаёт id и T через HTTP",
+        "Агент передаёт тот же T в POST /api/claims/:id/start"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Что сохраняется",
+      "items": [
+        "runs: thread_id=T, claim_id=id, status=running",
+        "claims: thread_id=T, status=in_progress"
+      ]
+    }
+  ]
+}

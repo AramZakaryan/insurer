@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "06 · Завершение и отдельные действия пользователя",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 520]
+  },
+  "participants": [
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "LLM / OpenRouter"
+    },
+    {
+      "id": "chain",
+      "type": "backend",
+      "label": "LangChain"
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Код агента"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Backend API"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SQLite"
+    },
+    {
+      "id": "user",
+      "type": "external",
+      "label": "Пользователь"
+    }
+  ],
+  "messages": [
+    {
+      "id": "message-1",
+      "from": "llm",
+      "to": "chain",
+      "label": "Финальный ответ без новых tool_calls",
+      "variant": "return",
+      "y": 160
+    },
+    {
+      "id": "message-2",
+      "from": "chain",
+      "to": "agent",
+      "label": "agent.stream завершён",
+      "variant": "return",
+      "y": 190
+    },
+    {
+      "id": "message-3",
+      "from": "agent",
+      "to": "api",
+      "label": "POST /api/claims/:id/finish",
+      "variant": "emphasis",
+      "y": 220
+    },
+    {
+      "id": "message-4",
+      "from": "api",
+      "to": "db",
+      "label": "UPDATE runs: status='completed', usage",
+      "variant": "default",
+      "y": 250
+    },
+    {
+      "id": "message-5",
+      "from": "api",
+      "to": "db",
+      "label": "UPDATE claims: decided / waiting_for_sign_off",
+      "variant": "default",
+      "y": 280
+    },
+    {
+      "id": "message-6",
+      "from": "api",
+      "to": "db",
+      "label": "INSERT events: completed",
+      "variant": "default",
+      "y": 310
+    },
+    {
+      "id": "message-7",
+      "from": "api",
+      "to": "agent",
+      "label": "HTTP 200: текущее состояние заявки",
+      "variant": "return",
+      "y": 340
+    },
+    {
+      "id": "message-8",
+      "from": "user",
+      "to": "api",
+      "label": "При sign-off: POST /api/claims/:id/sign-off",
+      "variant": "emphasis",
+      "y": 370
+    },
+    {
+      "id": "message-9",
+      "from": "api",
+      "to": "db",
+      "label": "Сохранить handler + signed_revision; status=decided",
+      "variant": "default",
+      "y": 400
+    },
+    {
+      "id": "message-10",
+      "from": "user",
+      "to": "api",
+      "label": "Отдельно: POST /api/claims/:id/pay",
+      "variant": "emphasis",
+      "y": 430
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Завершение запуска",
+      "items": [
+        "/finish: {thread_id:T, usage:{model,cost,input_tokens,output_tokens,seconds}}",
+        "Неизвестные стоимость и токены передаются как null",
+        "Backend требует сохранённое решение; иначе HTTP 422"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Большая выплата",
+      "items": [
+        "waiting_for_sign_off: сумма > $1,000 без согласования текущей revision",
+        "Пользователь подтверждает решение, затем отдельно симулирует выплату",
+        "Decided не означает, что выплата уже выполнена"
+      ]
+    }
+  ]
+}

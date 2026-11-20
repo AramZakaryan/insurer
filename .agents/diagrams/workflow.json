@@ -1,0 +1,141 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Insurer · Workflow",
+    "quality_profile": "showcase",
+    "animation": "none",
+    "viewBox": [1200, 420]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Запуск"
+    },
+    {
+      "id": "error",
+      "label": "Отказ",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": ["click", "request", "check", "invoke", "start", "write"],
+  "nodes": [
+    {
+      "id": "click",
+      "lane": "main",
+      "col": 0,
+      "type": "frontend",
+      "label": "Run agent",
+      "sublabel": "Создать T",
+      "width": 160
+    },
+    {
+      "id": "request",
+      "lane": "main",
+      "col": 1,
+      "type": "backend",
+      "label": "POST /run",
+      "sublabel": "{thread_id:T}",
+      "width": 160
+    },
+    {
+      "id": "check",
+      "lane": "main",
+      "col": 2,
+      "type": "security",
+      "label": "Проверка",
+      "sublabel": "Есть; waiting?",
+      "width": 160
+    },
+    {
+      "id": "invoke",
+      "lane": "main",
+      "col": 3,
+      "type": "backend",
+      "label": "POST /runs",
+      "sublabel": "Агент отвечает 202",
+      "width": 160
+    },
+    {
+      "id": "start",
+      "lane": "main",
+      "col": 4,
+      "type": "backend",
+      "label": "POST /start",
+      "sublabel": "Тот же T",
+      "width": 160
+    },
+    {
+      "id": "write",
+      "lane": "main",
+      "col": 5,
+      "type": "database",
+      "label": "Транзакция",
+      "sublabel": "Записать запуск",
+      "width": 160
+    },
+    {
+      "id": "reject",
+      "lane": "error",
+      "col": 2,
+      "type": "security",
+      "label": "404 / 409",
+      "sublabel": "Запуск отклонён",
+      "width": 160
+    }
+  ],
+  "edges": [
+    {
+      "from": "click",
+      "to": "request",
+      "role": "main"
+    },
+    {
+      "from": "request",
+      "to": "check",
+      "role": "main"
+    },
+    {
+      "from": "check",
+      "to": "invoke",
+      "label": "Да",
+      "role": "main"
+    },
+    {
+      "from": "invoke",
+      "to": "start",
+      "role": "main"
+    },
+    {
+      "from": "start",
+      "to": "write",
+      "role": "main"
+    },
+    {
+      "from": "check",
+      "to": "reject",
+      "label": "Нет",
+      "role": "error",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Атомарная запись",
+      "items": [
+        "BEGIN IMMEDIATE; проверить runs и claims",
+        "runs=running; claims=in_progress; COMMIT"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Данные",
+      "items": [
+        "UI → backend /run: {thread_id:T}",
+        "Backend → агент /runs: {claim_id:id, thread_id:T}",
+        "Агент → backend /start: {thread_id:T}"
+      ]
+    }
+  ]
+}

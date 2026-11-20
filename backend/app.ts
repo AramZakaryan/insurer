@@ -15,8 +15,12 @@ import {
 import type { ClaimEvent } from '../shared/contracts.ts';
 import { ApiError, Store } from './store.ts';
 
-export type Runner = (claimId: string, threadId: string) => Promise<void>;
-export function createApp(store: Store, runner: Runner, frontendDir: string) {
+export type DispatchRun = (claimId: string, threadId: string) => Promise<void>;
+export function createApp(
+  store: Store,
+  dispatch: DispatchRun,
+  frontendDir: string,
+) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '1mb' }));
@@ -33,7 +37,11 @@ export function createApp(store: Store, runner: Runner, frontendDir: string) {
     operation_id: string,
     description: string,
     schema: S,
-    handler: (req: Request, res: Response, body: z.infer<S>) => void,
+    handler: (
+      req: Request,
+      res: Response,
+      body: z.infer<S>,
+    ) => void | Promise<void>,
   ) {
     operations.push({
       operation_id,
@@ -162,15 +170,11 @@ export function createApp(store: Store, runner: Runner, frontendDir: string) {
     'run_claim',
     'Start an agent run for a waiting claim.',
     threadSchema,
-    (req, res, body) => {
+    async (req, res, body) => {
       const view = store.detail(id(req));
       if (view.status !== 'waiting')
         throw new ApiError(409, 'Claim is already processing or decided.');
-      void runner(id(req), body.thread_id).catch((error) =>
-        console.error(
-          `Claim ${id(req)}: ${error instanceof Error ? error.message : String(error)}`,
-        ),
-      );
+      await dispatch(id(req), body.thread_id);
       res.status(202).json({ thread_id: body.thread_id });
     },
   );

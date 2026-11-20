@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "02 · Создание агента и первый запрос",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 480]
+  },
+  "participants": [
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Код агента"
+    },
+    {
+      "id": "chain",
+      "type": "backend",
+      "label": "LangChain"
+    },
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "LLM / OpenRouter"
+    }
+  ],
+  "messages": [
+    {
+      "id": "message-1",
+      "from": "agent",
+      "to": "chain",
+      "label": "ChatOpenAI: MODEL_NAME или Luna; effort=low",
+      "variant": "default",
+      "y": 160
+    },
+    {
+      "id": "message-2",
+      "from": "agent",
+      "to": "chain",
+      "label": "createAgent: systemPrompt = instructions + policy_wording",
+      "variant": "emphasis",
+      "y": 190
+    },
+    {
+      "id": "message-3",
+      "from": "agent",
+      "to": "chain",
+      "label": "agent.stream: messages + thread_id=T",
+      "variant": "emphasis",
+      "y": 220
+    },
+    {
+      "id": "message-4",
+      "from": "chain",
+      "to": "llm",
+      "label": "POST /api/v1/chat/completions: system + user + tools",
+      "variant": "emphasis",
+      "y": 250
+    },
+    {
+      "id": "message-5",
+      "from": "llm",
+      "to": "chain",
+      "label": "AIMessage: текст или tool_calls",
+      "variant": "return",
+      "y": 280
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Как данные API становятся системным промптом",
+      "items": [
+        "Код агента: systemPrompt = instructions + \"\\n\\n\" + policy_wording",
+        "createAgent({model, systemPrompt, tools})",
+        "LLM получает: {role:\"system\", content:systemPrompt}",
+        "Отдельно: {role:\"user\", content:\"Process claim CLM-1001...\"}",
+        "tools — отдельные описания и JSON-схемы, не текст systemPrompt"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Пять инструментов",
+      "items": [
+        "get_claim — заявка и документы; get_policy — полис",
+        "get_claim_history — история клиента",
+        "record_decision — решение; pay_claim — симуляция выплаты"
+      ]
+    }
+  ]
+}

@@ -69,6 +69,9 @@ export const usageSchema = z
   })
   .strict();
 export const threadSchema = z.object({ thread_id: z.uuid() }).strict();
+export const runRequestSchema = threadSchema.extend({
+  claim_id: z.string().trim().min(1),
+});
 export const signOffSchema = z
   .object({
     handler: z.string().trim().min(1),

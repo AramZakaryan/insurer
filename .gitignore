@@ -11,3 +11,6 @@ dist/
 playwright-report/
 test-results/
 coverage/
+
+# Track the repository diagrams despite the global .agents rule.
+!/.agents/

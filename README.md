@@ -12,13 +12,13 @@ nvm use
 npm install
 ```
 
-Copy `.env.example` to `.env` and set `OPENROUTER_API_KEY`. Set `MODEL_NAME` to override the default Luna model at low effort. Keep the key on the backend. Agent runs make paid model requests; opening the interface does not.
+Copy `.env.example` to `.env` and set `OPENROUTER_API_KEY`. Set `MODEL_NAME` to override the default Luna model at low effort. Set the key in the agent environment. Agent runs make paid model requests; opening the interface does not.
 
 ```sh
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. The backend listens on port 3001. For a single server serving the built interface:
+Open http://127.0.0.1:5173. The backend listens on port 3001 and the agent on 3002. To serve the built interface from the backend:
 
 ```sh
 npm run build
@@ -26,6 +26,8 @@ npm start
 ```
 
 Open http://127.0.0.1:3001. SQLite lives in the ignored `outputs/insurer.sqlite`; decisions, payment simulations and activity survive a restart. An interrupted run is marked failed, and claims without a recorded decision can be retried. Thread IDs identify runs; automatic resumption of interrupted model execution is not implemented.
+
+Run the services independently in separate terminals with `npm run start:backend` and `npm run start:agent`. By default they use loopback. Set `AGENT_URL` on the backend and `BACKEND_URL` on the agent to point to the other service. Use `BACKEND_HOST` and `AGENT_HOST` to bind to a private network when running on different hosts. The pilot APIs assume a trusted network.
 
 ## Checks
 
@@ -62,7 +64,7 @@ Only the evaluator reads `data/evals/`. Reference answers never enter the backen
 ## Structure
 
 - `backend/`: explicit seed import, SQLite, business rules and API operations.
-- `agent/`: `run(claim_id, thread_id)` and tools that access records/instructions through HTTP.
+- `agent/`: HTTP endpoint `POST /runs` and tools that access records/instructions through HTTP.
 - `frontend/`: queue, full claim/documents, policy/history, activity, sign-off and read-only instructions.
 - `shared/`: typed contracts and request schemas.
 - `tests/`, `e2e/`: mocked integration tests and Playwright scenarios.

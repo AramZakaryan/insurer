@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Insurer · Lifecycle",
+    "quality_profile": "showcase",
+    "animation": "none",
+    "viewBox": [1080, 566]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Заявка"
+    },
+    {
+      "id": "sign",
+      "label": "Подтверждение"
+    }
+  ],
+  "states": [
+    {
+      "id": "waiting",
+      "type": "start",
+      "label": "waiting",
+      "sublabel": "В очереди",
+      "lane": "main",
+      "col": 0,
+      "width": 110
+    },
+    {
+      "id": "active",
+      "type": "active",
+      "label": "in_progress",
+      "sublabel": "/start → работа",
+      "lane": "main",
+      "col": 2,
+      "width": 150
+    },
+    {
+      "id": "finished",
+      "type": "success",
+      "label": "decided",
+      "sublabel": "Решение принято",
+      "lane": "main",
+      "col": 4,
+      "width": 180
+    },
+    {
+      "id": "signoff",
+      "type": "waiting",
+      "label": "Sign-off",
+      "sublabel": "waiting_for_sign_off",
+      "lane": "sign",
+      "col": 0,
+      "width": 200
+    }
+  ],
+  "transitions": [
+    {
+      "id": "need-sign",
+      "from": "active",
+      "to": "signoff",
+      "label": "> $1,000",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "straight",
+      "labelAt": [450, 240]
+    },
+    {
+      "id": "signed",
+      "from": "signoff",
+      "to": "finished",
+      "label": "/sign-off",
+      "variant": "emphasis"
+    },
+    {
+      "id": "failed",
+      "from": "active",
+      "to": "waiting",
+      "label": "/fail без решения",
+      "variant": "dashed",
+      "route": "top-channel",
+      "fromSide": "top",
+      "toSide": "top",
+      "channelY": 65
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Запуск",
+      "items": [
+        "/run → 202; /start → waiting меняется на in_progress",
+        "Оба запроса: {thread_id:T}"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Завершение",
+      "items": [
+        "/finish → decided либо waiting_for_sign_off",
+        "decided не означает оплату; /pay — отдельно"
+      ]
+    }
+  ]
+}

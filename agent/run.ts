@@ -28,6 +28,10 @@ export function createRunner(options: AgentOptions) {
     if (!started.created) return;
     const start = performance.now();
     try {
+      if (!options.createModel && !options.apiKey)
+        throw new Error(
+          'Set OPENROUTER_API_KEY in the agent environment before retrying.',
+        );
       const config = await api<{
         instructions: string;
         policy_wording: string;

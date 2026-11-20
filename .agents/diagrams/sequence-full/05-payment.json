@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "05 · Симуляция выплаты и проверка лимита",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1080, 480]
+  },
+  "participants": [
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "LLM / OpenRouter"
+    },
+    {
+      "id": "chain",
+      "type": "backend",
+      "label": "LangChain"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Backend API"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SQLite"
+    }
+  ],
+  "messages": [
+    {
+      "id": "message-1",
+      "from": "llm",
+      "to": "chain",
+      "label": "approve ≤ $1,000: tool_call pay_claim",
+      "variant": "return",
+      "y": 160
+    },
+    {
+      "id": "message-2",
+      "from": "chain",
+      "to": "api",
+      "label": "POST /api/claims/:id/pay",
+      "variant": "emphasis",
+      "y": 190
+    },
+    {
+      "id": "message-3",
+      "from": "api",
+      "to": "db",
+      "label": "Проверить approve, amount, revision, paid_cents",
+      "variant": "security",
+      "y": 220
+    },
+    {
+      "id": "message-4",
+      "from": "api",
+      "to": "db",
+      "label": "Проверить sign-off при сумме > $1,000",
+      "variant": "security",
+      "y": 250
+    },
+    {
+      "id": "message-5",
+      "from": "api",
+      "to": "db",
+      "label": "Если разрешено: UPDATE claims.paid_cents",
+      "variant": "default",
+      "y": 280
+    },
+    {
+      "id": "message-6",
+      "from": "api",
+      "to": "chain",
+      "label": "HTTP 200: выплата; либо 409: заблокировано",
+      "variant": "return",
+      "y": 310
+    },
+    {
+      "id": "message-7",
+      "from": "chain",
+      "to": "llm",
+      "label": "ToolMessage: подтверждение или {error}",
+      "variant": "emphasis",
+      "y": 340
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Запрос тула",
+      "items": [
+        "{thread_id:T, amount, revision}",
+        "До $1,000 включительно агенту поручено вызвать pay_claim",
+        "Сумма и revision должны совпасть с решением"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Защита backend",
+      "items": [
+        "Свыше $1,000 без sign-off платёж блокируется",
+        "Это действует, даже если LLM всё же вызовет pay_claim",
+        "Повторная выплата не списывается заново; все платежи симулируются"
+      ]
+    }
+  ]
+}

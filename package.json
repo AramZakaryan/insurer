@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/run.mjs start",
+    "start:backend": "node scripts/run.mjs start:backend",
+    "start:agent": "node scripts/run.mjs start:agent",
     "test": "node scripts/run.mjs test",
     "typecheck": "node scripts/run.mjs typecheck",
     "lint": "node scripts/run.mjs lint",
