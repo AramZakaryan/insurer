@@ -33,7 +33,7 @@ Our goal is to handle claims straight through, as accurately as our handlers do.
 
 ## Our records
 
-Everything is in `data/`, described in `data/README.md`: the claims queue, the policies, the customers, the plans, the handlers, the policy wording and the claims manual. The held-out claims in `data/evals/` are for checking the agent later and stay out of the queue.
+The claims queue, policy records and policy wording are described in [the data README](../data/README.md). The held-out claims in `data/evals/` are for checking the agent later and stay out of the queue.
 
 ## Not for now
 

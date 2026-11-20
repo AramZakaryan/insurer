@@ -8,4 +8,4 @@ The supplied pilot records are synthetic travel insurance examples:
 
 The backend imports only these three named files into SQLite on first start. It does not scan this directory recursively. The source records are never served as static files.
 
-`evals/` contains reference decisions and held-out evaluation records. Only `npm run evaluate` reads these; the working queue and model inputs exclude them. No separate customers, handlers, structured plans or claims manual files are included in the supplied dataset.
+`evals/` contains reference decisions for the working queue and a separate held-out set with its own claims and reference decisions. Only `npm run evaluate` reads these; the working queue and model inputs exclude them. No separate customers, handlers, structured plans or claims manual files are included in the supplied dataset.

@@ -42,14 +42,6 @@ The combined check runs Prettier, ESLint, strict type checking, unit/integration
 
 Husky installs the pre-commit hook during `npm install`. It formats/lints staged files, then checks types, runs tests, builds the frontend and runs Playwright. A failing step blocks the commit.
 
-## Setup
-
-Use Node 26 (`nvm install` and `nvm use` read `.nvmrc`). Install dependencies with `npm install`, copy `.env.example` to `.env` if it does not exist, and set `OPENROUTER_API_KEY`. Install the test browser once with `npm run browsers`.
-
-Run `npm run dev` and open `http://127.0.0.1:5173`. For the built app, run `npm run build` followed by `npm start`, then open `http://127.0.0.1:3001`.
-
-SQLite is stored in ignored `outputs/insurer.sqlite`. Restarting retains decisions and payments. Tests and evaluations use separate temporary databases.
-
 ## Evaluation
 
 These commands make paid requests and run the actual agent against reference answers in an isolated temporary database:
